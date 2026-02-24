@@ -203,7 +203,7 @@ https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/onversionchange
         setStyle( promptStyleOption );
 
         // Wheel settings
-        invertedWheel = false;//settings.data.invertedWheel;
+        invertedWheel = true;//settings.data.invertedWheel;
 
         // Add pointer controls
         // Stop animation while pressing on the screen, resume on letting go.

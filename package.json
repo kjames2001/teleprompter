@@ -39,7 +39,10 @@
   "dependencies": {
     "electron-squirrel-startup": "1.0.0",
     "shelljs": "0.8.1",
-    "deb-version-compare": "git+https://github.com/sdumetz/node-deb-version-compare.git"
+    "deb-version-compare": "git+https://github.com/sdumetz/node-deb-version-compare.git",
+    "express": "4.17.1",
+    "cors": "2.8.5",
+    "connect-multiparty": "2.2.0"
   },
   "devDependencies": {
     "electron": "1.8.8"

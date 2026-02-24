@@ -326,8 +326,6 @@ function setupMenu() {
 }
 
 function imageServer() {
-	/*
-	//express server for image upload
 	var express = require('express');
 	var cors = require('cors') 
 	var app = express();
@@ -342,7 +340,6 @@ function imageServer() {
 	var imageServerPort = 3001;
 	var imageServerURL = 'http://localhost:' + imageServerPort + '/image/';
 
-	//Make sure directories exist
 	shell.mkdir('-p', uploadPath);
 
 	app.use(cors()); 
@@ -366,6 +363,7 @@ function imageServer() {
 										html += "    var url     = \" " + imageServerURL + req.files.upload.name + "\";";
 										html += "    var message = \"Uploaded file successfully\";";
 										html += "";
+
 										html += "    window.parent.CKEDITOR.tools.callFunction(funcNum, url, message);";
 										html += "</script>";
 
@@ -378,16 +376,13 @@ function imageServer() {
 
 	app.use('/image', express.static(uploadPath));
 
-	//If port changes from 3000, need to be also change in the ckeditor config.js
 	app.listen(imageServerPort, function () {
 		console.log('Image Upload Server running at port ' + imageServerPort + '!');
 		console.log('Image Upload Path: '+ uploadPath);
 	});
-	*/
 }
 
 // REMOTE CONTROL BEGINS
-
 // Get computer IPs for remote control
 function getIP() {
 	var os = require('os');
