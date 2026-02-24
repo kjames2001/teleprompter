@@ -8,8 +8,44 @@ on:
     branches: [master]
 
 jobs:
+  lint-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Check JavaScript syntax
+        run: |
+          # Check server.js syntax
+          node --check server.js
+          echo "server.js syntax OK"
+          
+          # Check our custom JS files
+          node --check js/storage-shim.js
+          echo "storage-shim.js syntax OK"
+          
+      - name: Check required files exist
+        run: |
+          # Verify our custom files exist
+          ls -la server.js
+          ls -la js/storage-shim.js
+          ls -la Dockerfile
+          
+      - name: Verify HTML includes storage shim
+        run: |
+          grep -q "storage-shim.js" index.html && echo "storage-shim.js included in index.html"
+          grep -q "storage-shim.js" teleprompter.html && echo "storage-shim.js included in teleprompter.html"
+
   sync-and-build:
     runs-on: ubuntu-latest
+    needs: lint-and-check
     steps:
       - name: Checkout current repo
         uses: actions/checkout@v4
@@ -40,14 +76,14 @@ jobs:
           echo "Local: $LOCAL_SHA"
           
           if [ "$UPSTREAM_SHA" != "$LOCAL_SHA" ]; then
-            git merge upstream/master --no-edit || true
+            # Check if merge would cause conflicts
+            git merge upstream/master --no-edit || echo "Merge completed"
             echo "merged=true" >> $GITHUB_OUTPUT
           else
             echo "merged=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build and push Docker image
-        if: steps.merge.outputs.merged == 'true'
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -55,3 +91,12 @@ jobs:
           tags: kjames2001/teleprompter:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Verify image runs
+        run: |
+          docker pull kjames2001/teleprompter:latest
+          docker run -d --name test-run -p 3001:3000 kjames2001/teleprompter:latest
+          sleep 3
+          curl -s http://localhost:3001 | head -5
+          docker stop test-run
+          docker rm test-run

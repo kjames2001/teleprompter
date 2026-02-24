@@ -1,4 +1,5 @@
 // LocalStorage shim for server-side persistence
+// Must be loaded BEFORE any other scripts that use localStorage
 (function() {
     const DATA_KEYS = [
         'IFTeleprompterSettings',
@@ -6,7 +7,8 @@
         'IFTeleprompterSideBar',
         'IFTeleprompterControl',
         'IFTeleprompterThemeStyles',
-        'IFTeleprompterThemeDefaultStyle'
+        'IFTeleprompterThemeDefaultStyle',
+        'IFTeleprompterVersion'
     ];
     
     async function syncToServer(key, value, isDelete = false) {
@@ -20,6 +22,7 @@
                     body: value
                 });
             }
+            console.log('Synced to server:', key);
         } catch(e) {
             console.error('Failed to sync to server:', e);
         }
@@ -29,7 +32,11 @@
         try {
             const response = await fetch('/data/' + key);
             if (response.ok) {
-                return await response.text();
+                const text = await response.text();
+                if (text) {
+                    console.log('Loaded from server:', key);
+                    return text;
+                }
             }
         } catch(e) {
             console.error('Failed to load from server:', e);
@@ -37,25 +44,23 @@
         return null;
     }
 
-    // Store originals
-    const originalSetItem = localStorage.setItem.bind(localStorage);
-    const originalGetItem = localStorage.getItem.bind(localStorage);
-    const originalRemoveItem = localStorage.removeItem.bind(localStorage);
+    // Store original prototype methods
+    const originalProtoSetItem = Storage.prototype.setItem;
+    const originalProtoGetItem = Storage.prototype.getItem;
+    const originalProtoRemoveItem = Storage.prototype.removeItem;
 
-    // Override setItem
-    localStorage.setItem = function(key, value) {
-        originalSetItem(key, value);
+    // Override prototype methods to catch ALL localStorage usage
+    Storage.prototype.setItem = function(key, value) {
+        originalProtoSetItem.call(this, key, value);
         syncToServer(key, value);
     };
 
-    // Override getItem
-    localStorage.getItem = function(key) {
-        return originalGetItem(key);
+    Storage.prototype.getItem = function(key) {
+        return originalProtoGetItem.call(this, key);
     };
 
-    // Override removeItem  
-    localStorage.removeItem = function(key) {
-        originalRemoveItem(key);
+    Storage.prototype.removeItem = function(key) {
+        originalProtoRemoveItem.call(this, key);
         syncToServer(key, null, true);
     };
 
@@ -66,7 +71,7 @@
             const value = await loadFromServer(key);
             if (value !== null && value !== '') {
                 console.log('Loading from server:', key);
-                originalSetItem(key, value);
+                originalProtoSetItem.call(localStorage, key, value);
             }
         }
     }
