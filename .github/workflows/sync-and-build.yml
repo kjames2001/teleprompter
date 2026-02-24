@@ -2,7 +2,7 @@ name: Sync and Build
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Every hour
+    - cron: '0 0 */2 * *'  # Every hour
   workflow_dispatch:
   push:
     branches: [master]
