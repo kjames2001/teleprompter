@@ -1,12 +1,17 @@
 // LocalStorage shim for server-side persistence
 (function() {
-    const API_BASE = '';
+    const DATA_KEYS = [
+        'IFTeleprompterSettings',
+        'IFTeleprompterSession', 
+        'IFTeleprompterSideBar',
+        'IFTeleprompterControl',
+        'IFTeleprompterThemeStyles',
+        'IFTeleprompterThemeDefaultStyle'
+    ];
     
     async function syncToServer(key, value, isDelete = false) {
         try {
-            if (isDelete) {
-                await fetch('/data/' + key, { method: 'DELETE' });
-            } else if (value === null) {
+            if (isDelete || value === null) {
                 await fetch('/data/' + key, { method: 'DELETE' });
             } else {
                 await fetch('/data/' + key, {
@@ -32,49 +37,41 @@
         return null;
     }
 
+    // Store originals
     const originalSetItem = localStorage.setItem.bind(localStorage);
+    const originalGetItem = localStorage.getItem.bind(localStorage);
     const originalRemoveItem = localStorage.removeItem.bind(localStorage);
-    const originalClear = localStorage.clear.bind(localStorage);
 
+    // Override setItem
     localStorage.setItem = function(key, value) {
         originalSetItem(key, value);
         syncToServer(key, value);
     };
 
+    // Override getItem
     localStorage.getItem = function(key) {
         return originalGetItem(key);
     };
 
+    // Override removeItem  
     localStorage.removeItem = function(key) {
         originalRemoveItem(key);
         syncToServer(key, null, true);
     };
 
-    localStorage.clear = function() {
-        originalClear();
-    };
-
-    // Load all keys from server on startup
+    // Load all known keys from server on startup
     async function initStorage() {
-        const keys = ['Teleprompter-session', 'Teleprompter-Settings', 'teleprompter'];
-        for (const key of keys) {
+        console.log('Initializing storage shim...');
+        for (const key of DATA_KEYS) {
             const value = await loadFromServer(key);
             if (value !== null && value !== '') {
-                try {
-                    const parsed = JSON.parse(value);
-                    const current = localStorage.getItem(key);
-                    if (!current) {
-                        originalSetItem(key, value);
-                    }
-                } catch(e) {
-                    if (value) {
-                        originalSetItem(key, value);
-                    }
-                }
+                console.log('Loading from server:', key);
+                originalSetItem(key, value);
             }
         }
     }
 
+    // Run immediately
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initStorage);
     } else {
