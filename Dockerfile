@@ -7,7 +7,7 @@ RUN npm install --production
 
 COPY . .
 
-RUN mkdir -p uploads
+RUN mkdir -p uploads data
 
 EXPOSE 3000
 
